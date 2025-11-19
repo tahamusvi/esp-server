@@ -5,7 +5,9 @@ from .models import IncomingMessage
 
 class IncomingSmsPayloadSerializer(serializers.Serializer):
     """Payload sent by device (ESP32/SIM800)."""
-    token = serializers.CharField(source="token")
+    from_ = serializers.CharField(source="from_number")  # maps to model field
+    to = serializers.CharField(source="to_number")
+    token = serializers.CharField()
     body = serializers.CharField()
     received_at = serializers.DateTimeField(required=False)
 

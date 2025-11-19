@@ -26,6 +26,7 @@ class IncomingSmsAPIView(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
 
+
         # Validate request payload with serializer
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
@@ -33,6 +34,18 @@ class IncomingSmsAPIView(APIView):
 
         validated = serializer.validated_data
         token = validated["token"]
+
+        try:
+            endpoint = SimEndpoint.objects.get(api_token=token, is_active=True)
+        except SimEndpoint.DoesNotExist:
+            return Response(
+                {"detail": "Invalid or missing API token."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from_number = validated["from_number"]
+        to_number = validated["to_number"]
+
         body = validated["body"]
         received_at = validated.get("received_at") or timezone.now()
 
@@ -54,7 +67,6 @@ class IncomingSmsAPIView(APIView):
         return Response(
             {
                 "message": out.data,
-                "deliveries_created": deliveries_created,
             },
             status=status.HTTP_201_CREATED,
         )

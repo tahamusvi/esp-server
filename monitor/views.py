@@ -105,3 +105,60 @@ class SimEndpointListCreateAPIView(generics.ListCreateAPIView):
         project_ids = Project.objects.all()
         return SimEndpoint.objects.filter(project_id__in=project_ids).order_by('name')
         
+
+from django.db.models.functions import TruncHour
+from django.db.models import Count
+from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from datetime import timedelta
+
+# فرض بر این است که مدل IncomingMessage و Project در دسترس هستند
+
+class SmsTrafficAPIView(APIView):
+    """
+    Calculates and returns the SMS traffic (incoming messages) 
+    count for the last 24 hours, grouped by hour.
+    """
+
+    def get(self, request, *args, **kwargs):
+        
+        project_ids = Project.objects.all().values_list('id', flat=True)
+
+        if not project_ids:
+            return Response({"detail": "No active project found for this user."}, status=status.HTTP_404_NOT_FOUND)
+
+        end_time = timezone.now()
+        start_time = end_time - timedelta(hours=24)
+        
+        traffic_data = (
+            IncomingMessage.objects.filter(
+                project_id__in=project_ids,
+                received_at__range=(start_time, end_time)
+            )
+            .annotate(hour=TruncHour('received_at'))
+            .values('hour')
+            .annotate(count=Count('id'))
+            .order_by('hour')
+        )
+
+
+        hourly_traffic = {}
+        current_time = start_time
+        while current_time <= end_time:
+            hourly_traffic[current_time.strftime("%Y-%m-%dT%H:00:00")] = 0
+            current_time += timedelta(hours=1)
+            
+        for item in traffic_data:
+            time_key = item['hour'].strftime("%Y-%m-%dT%H:00:00")
+            if time_key in hourly_traffic:
+                hourly_traffic[time_key] = item['count']
+
+        chart_data = [
+            {"time": key, "sms_count": value}
+            for key, value in sorted(hourly_traffic.items())
+        ]
+        
+        return Response(chart_data, status=status.HTTP_200_OK)

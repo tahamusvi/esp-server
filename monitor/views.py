@@ -7,8 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import SimEndpoint, IncomingMessage
-from .serializers import IncomingSmsPayloadSerializer, IncomingMessageSerializer
+from .models import SimEndpoint, IncomingMessage,Project
+from .serializers import IncomingSmsPayloadSerializer, IncomingMessageSerializer,SimEndpointSerializer
 # from .services import process_incoming_message
 
 
@@ -89,4 +89,19 @@ class IncomingMessageListAPIView(generics.ListAPIView):
          e.g., a custom authentication class sets request.user to an object with a 'project' attribute.)
         """
         return IncomingMessage.objects.all().order_by('-received_at')
+        
+
+
+class SimEndpointListCreateAPIView(generics.ListCreateAPIView):
+    """
+    Handles GET (List Endpoints) and POST (Create New Endpoint).
+    """
+    serializer_class = SimEndpointSerializer
+
+    def get_queryset(self):
+        """
+        Filters Endpoints based on the authenticated user's project(s).
+        """
+        project_ids = Project.objects.all()
+        return SimEndpoint.objects.filter(project_id__in=project_ids).order_by('name')
         

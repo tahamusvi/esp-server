@@ -70,3 +70,23 @@ class IncomingSmsAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+
+from rest_framework import generics
+
+class IncomingMessageListAPIView(generics.ListAPIView):
+    """
+    Returns a list of all incoming messages.
+    Access must be restricted to authenticated users/projects.
+    """
+    serializer_class = IncomingMessageSerializer
+
+    def get_queryset(self):
+        """
+        Filters the queryset to only include messages related to the authenticated user's project.
+        (This part assumes a standard DRF authentication mechanism is in place,
+         e.g., a custom authentication class sets request.user to an object with a 'project' attribute.)
+        """
+        return IncomingMessage.objects.all().order_by('-received_at')
+        

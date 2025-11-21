@@ -19,14 +19,15 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
     cfg = channel.config or {}
     
     text = (
-        f"📩 **پیامک دریافتی جدید** ({message.project.name}):\n\n"
-        f"فرستنده: `{message.from_number}`\n"
-        f"گیرنده: `{message.to_number}`\n"
-        f"زمان: {message.received_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"----------------------------------------\n"
-        f"**متن پیام:**\n"
+        f"🔔 پیامک جدید (پروژه: {message.project.name}):\n"
+        f"----------------------------------\n"
+        f"📞 از شماره: {message.from_number}\n"
+        f"📱 به شماره: {message.to_number}\n"
+        f"🕒 تاریخ و زمان: {message.received_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"==================================\n"
+        f"📝 متن پیام:\n"
         f"{message.body}"
-    )    
+    )
     try:
         if channel.type == DestinationChannel.ChannelType.TELEGRAM:
             token = cfg.get("token")

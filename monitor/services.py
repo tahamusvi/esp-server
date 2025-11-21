@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db import transaction
 from monitor.models import IncomingMessage, ForwardRule, DeliveryAttempt, DestinationChannel
 from django.core.exceptions import ValidationError
-from .behaviors import flashcall , send_bale_message,send_telegram_message
+from .behaviors import send_bale_message,send_telegram_message
 
 
 

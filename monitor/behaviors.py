@@ -2,33 +2,6 @@ import requests
 import json
 from config.settings import PROXY
 
-def flashcall(cfg):
-    numbers = []
-    for number in cfg.get("destination"):
-        numbers.append(cfg.get("destination")[number])
-
-    url = cfg.get("url")
-    if not url:
-        raise ValueError("webhook.url not configured")
-    headers = cfg.get("headers") or {}
-    for x in numbers:
-        payload = {
-            "action": "flashcall",
-            "destination": x,
-            "payload": {"code":cfg.get("code"),},
-            "token":cfg.get("token"),
-        }
-        r = requests.post(url, json=payload, headers=headers, timeout=8)
-
-    resp_code = r.status_code
-    if r.status_code >= 300:
-        raise RuntimeError(f"webhook responded {r.status_code}: {r.text[:200]}")
-
-
-
-
-
-
 def send_bale_message(token: str, chat_id: str | int, text: str, reply_to_message_id: int | None = None):
 
     url = f"https://tapi.bale.ai/bot{token}/sendMessage"

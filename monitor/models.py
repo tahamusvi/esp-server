@@ -79,6 +79,7 @@ class DestinationChannel(TimeStampedModel):
         TELEGRAM = "telegram", "Telegram"
         WEBHOOK = "webhook", "Webhook"
         EMAIL = "email", "Email"
+        Bale = "bale", "Bale"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="destination_channels")

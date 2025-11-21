@@ -38,6 +38,15 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
             result = send_telegram_message(token, chat_id, text)
             provider_id = result.get("message_id")
 
+        if channel.type == DestinationChannel.ChannelType.Bale:
+            token = cfg.get("token")
+            chat_id = cfg.get("chat_id")
+            if not token or not chat_id:
+                raise ValueError("Bale token or chat_id is missing in config.")
+                
+            result = send_bale_message(token, chat_id, text)
+            provider_id = result.get("message_id")
+
         elif channel.type == DestinationChannel.ChannelType.WEBHOOK:
             url = cfg.get("url")
             if not url:

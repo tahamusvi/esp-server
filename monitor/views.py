@@ -17,24 +17,21 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import timedelta
 from rest_framework import generics
 
+from .services import process_incoming_message
 
 #--------------------------------------------------------------------
 class IncomingSmsAPIView(APIView):
     """
     Public endpoint for devices (ESP32/SIM800) to push incoming SMS.
-    Authentication is done via API token in the Authorization header:
-        Authorization: Token <api_token>
     """
 
-    authentication_classes = []  # custom token-based, not DRF auth
-    permission_classes = []      # can be customized later
-    serializer_class = IncomingSmsPayloadSerializer  # for Swagger / DRF tooling
+    authentication_classes = []  
+    permission_classes = []      
+    serializer_class = IncomingSmsPayloadSerializer
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
 
-
-        # Validate request payload with serializer
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -50,34 +47,32 @@ class IncomingSmsAPIView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        from_number = validated["from_number"]
-        to_number = validated["to_number"]
-
-        body = validated["body"]
-        received_at = validated.get("received_at") or timezone.now()
-
-        # Create IncomingMessage
         msg = IncomingMessage.objects.create(
             project=endpoint.project,
             endpoint=endpoint,
-            from_number=from_number,
-            to_number=to_number,
-            body=body,
-            received_at=received_at,
+            from_number=validated["from_number"],
+            to_number=validated["to_number"],
+            body=validated["body"],
+            received_at=validated.get("received_at") or timezone.now(),
             raw_payload=request.data,
         )
 
-        # Delegate business logic to service layer
-        # deliveries_created = process_incoming_message(msg)
+        try:
+            deliveries_created = process_incoming_message(msg)
+            
+            status_message = f"Message saved. {deliveries_created} delivery attempts initiated."
+            
+        except Exception as e:
+            status_message = f"Message saved, but processing failed: {e}"
 
         out = IncomingMessageSerializer(msg)
         return Response(
             {
                 "message": out.data,
+                "status": status_message,
             },
             status=status.HTTP_201_CREATED,
         )
-
 #--------------------------------------------------------------------
 class IncomingMessageListAPIView(generics.ListAPIView):
     """

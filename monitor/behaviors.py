@@ -67,10 +67,15 @@ def send_telegram_message(token: str, chat_id: int | str, text: str,
         payload["reply_to_message_id"] = reply_to_message_id
     if disable_web_page_preview is not None:
         payload["disable_web_page_preview"] = disable_web_page_preview
+    
+    print("hello")
+    print(url)
+    print(payload)
 
     r = requests.post(url, json=payload, timeout=10)
     r.raise_for_status()
     data = r.json()
+    print(data)
     if not data.get("ok"):
         raise RuntimeError(f"Telegram error: {data}")
     return data["result"]

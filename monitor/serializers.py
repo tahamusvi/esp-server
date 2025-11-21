@@ -1,6 +1,6 @@
 # app/serializers.py
 from rest_framework import serializers
-from .models import IncomingMessage,SimEndpoint
+from .models import *
 
 
 class IncomingSmsPayloadSerializer(serializers.Serializer):
@@ -84,3 +84,33 @@ class SimEndpointSerializer(serializers.ModelSerializer):
         # return obj.connection_statuses.order_by('-created_at').first().created_at
         # مثال ثابت:
         return "۱۴۰۴/۰۲/۲۳، ۲۰:۰۲:۲۲"
+
+
+
+class DeliveryAttemptSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Delivery History page.
+    Includes nested data like channel and rule names.
+    """
+    channel_name = serializers.CharField(source='channel.name', read_only=True)
+    rule_name = serializers.CharField(source='rule.name', read_only=True)
+    message_content = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DeliveryAttempt
+        fields = (
+            'id', 
+            'status', 
+            'channel_name', 
+            'rule_name', 
+            'last_attempt_at', 
+            'created_at',
+            'error', 
+            'provider_message_id',
+            'retry_count',
+            'message_content'
+        )
+    
+    def get_message_content(self, obj):
+        body = obj.message.body
+        return body[:50] + '...' if len(body) > 50 else body

@@ -7,9 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import SimEndpoint, IncomingMessage,Project
-from .serializers import IncomingSmsPayloadSerializer, IncomingMessageSerializer,SimEndpointSerializer
-# from .services import process_incoming_message
+from .models import *
+from .serializers import *
 
 from django.db.models.functions import TruncHour
 from django.db.models import Count
@@ -166,3 +165,25 @@ class SmsTrafficAPIView(APIView):
         
         return Response(chart_data, status=status.HTTP_200_OK)
 #--------------------------------------------------------------------
+class DeliveryAttemptListAPIView(generics.ListAPIView):
+    """
+    API endpoint to list delivery attempts (Simple Version).
+    Only includes attempts related to the authenticated user's projects.
+    """
+    serializer_class = DeliveryAttemptSerializer
+    permission_classes = [IsAuthenticated]
+    
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        user_projects = self.request.user.projects.all()
+        project_ids = user_projects.values_list('id', flat=True)
+
+        if not project_ids:
+            return DeliveryAttempt.objects.none()
+
+        queryset = DeliveryAttempt.objects.filter(
+            message__project_id__in=project_ids
+        ).select_related('channel', 'rule', 'message')
+
+        return queryset

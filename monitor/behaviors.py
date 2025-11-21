@@ -1,6 +1,6 @@
 import requests
 import json
-
+from config.settings import PROXY
 
 def flashcall(cfg):
     numbers = []
@@ -68,11 +68,13 @@ def send_telegram_message(token: str, chat_id: int | str, text: str,
     if disable_web_page_preview is not None:
         payload["disable_web_page_preview"] = disable_web_page_preview
     
-    print("hello")
-    print(url)
-    print(payload)
+    proxy_url = PROXY
+    proxies = {
+            "http": proxy_url,
+            "https": proxy_url, 
+    }
 
-    r = requests.post(url, json=payload, timeout=10)
+    r = requests.post(url, json=payload,proxies=proxies, timeout=10)
     r.raise_for_status()
     data = r.json()
     print(data)

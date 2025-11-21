@@ -19,6 +19,7 @@ SECRET_KEY = env("SECRET_KEY")
 
 REDIS_LINK = env("REDIS_LINK")
 RABBIT_URI = env("RABBIT_URI")
+PROXY = env("PROXY")
 
 
 MEDIA_URL = "/media/"

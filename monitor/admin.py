@@ -34,6 +34,7 @@ class RuleDestinationInline(admin.TabularInline):
 class ProjectAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
         "name",
+        "user",
         "slug",
         "environment",
         "timezone",

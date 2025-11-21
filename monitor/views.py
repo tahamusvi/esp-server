@@ -11,7 +11,14 @@ from .models import SimEndpoint, IncomingMessage,Project
 from .serializers import IncomingSmsPayloadSerializer, IncomingMessageSerializer,SimEndpointSerializer
 # from .services import process_incoming_message
 
+from django.db.models.functions import TruncHour
+from django.db.models import Count
+from rest_framework.permissions import IsAuthenticated
+from datetime import timedelta
+from rest_framework import generics
 
+
+#--------------------------------------------------------------------
 class IncomingSmsAPIView(APIView):
     """
     Public endpoint for devices (ESP32/SIM800) to push incoming SMS.
@@ -71,61 +78,63 @@ class IncomingSmsAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-
-
-from rest_framework import generics
-
+#--------------------------------------------------------------------
 class IncomingMessageListAPIView(generics.ListAPIView):
     """
-    Returns a list of all incoming messages.
-    Access must be restricted to authenticated users/projects.
+    Returns a list of all incoming messages related to the authenticated user's projects.
     """
     serializer_class = IncomingMessageSerializer
+    permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
-        """
-        Filters the queryset to only include messages related to the authenticated user's project.
-        (This part assumes a standard DRF authentication mechanism is in place,
-         e.g., a custom authentication class sets request.user to an object with a 'project' attribute.)
-        """
-        return IncomingMessage.objects.all().order_by('-received_at')
-        
+        user_projects = self.request.user.projects.filter(is_active=True)
+        project_ids = user_projects.values_list('id', flat=True)
 
+        if not project_ids:
+            return IncomingMessage.objects.none()
 
+        """
+        Filters the queryset to only include messages related to the authenticated user's project IDs.
+        """
+        return IncomingMessage.objects.filter(
+            project_id__in=project_ids
+        ).order_by('-received_at')
+
+#--------------------------------------------------------------------
 class SimEndpointListCreateAPIView(generics.ListCreateAPIView):
     """
     Handles GET (List Endpoints) and POST (Create New Endpoint).
+    Restricted to the user's projects.
     """
     serializer_class = SimEndpointSerializer
+    permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
         """
-        Filters Endpoints based on the authenticated user's project(s).
+        Filters Endpoints based on the authenticated user's projects.
         """
-        project_ids = Project.objects.all()
-        return SimEndpoint.objects.filter(project_id__in=project_ids).order_by('name')
+        user_projects = self.request.user.projects.all()
+        project_ids = user_projects.values_list('id', flat=True)
         
+        return SimEndpoint.objects.filter(
+            project_id__in=project_ids
+        ).order_by('name')
 
-from django.db.models.functions import TruncHour
-from django.db.models import Count
-from django.utils import timezone
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from datetime import timedelta
-
-# فرض بر این است که مدل IncomingMessage و Project در دسترس هستند
-
+    def perform_create(self, serializer):
+        serializer.save()
+        
+#--------------------------------------------------------------------
 class SmsTrafficAPIView(APIView):
     """
     Calculates and returns the SMS traffic (incoming messages) 
-    count for the last 24 hours, grouped by hour.
+    count for the last 24 hours, grouped by hour, only for the authenticated user's projects.
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         
-        project_ids = Project.objects.all().values_list('id', flat=True)
+        user_projects = request.user.projects.all()
+        project_ids = user_projects.values_list('id', flat=True)
 
         if not project_ids:
             return Response({"detail": "No active project found for this user."}, status=status.HTTP_404_NOT_FOUND)
@@ -144,7 +153,6 @@ class SmsTrafficAPIView(APIView):
             .order_by('hour')
         )
 
-
         hourly_traffic = {}
         current_time = start_time
         while current_time <= end_time:
@@ -162,3 +170,4 @@ class SmsTrafficAPIView(APIView):
         ]
         
         return Response(chart_data, status=status.HTTP_200_OK)
+#--------------------------------------------------------------------

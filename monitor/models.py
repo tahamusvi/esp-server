@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.conf import settings
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -25,6 +25,13 @@ class Project(TimeStampedModel):
     description = models.TextField(blank=True)
     timezone = models.CharField(max_length=64, default="Europe/Amsterdam")
     is_active = models.BooleanField(default=True)
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='projects',
+        verbose_name='Owner'
+    )
 
     def __str__(self):
         return f"{self.name} ({self.environment})"

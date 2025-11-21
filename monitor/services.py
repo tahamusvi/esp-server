@@ -18,8 +18,15 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
     channel = attempt.channel
     cfg = channel.config or {}
     
-    text = f"New SMS from {message.from_number} to {message.to_number} (Project: {message.project.slug}):\n\n{message.body}"
-    
+    text = (
+        f"📩 **پیامک دریافتی جدید** ({message.project.name}):\n\n"
+        f"فرستنده: `{message.from_number}`\n"
+        f"گیرنده: `{message.to_number}`\n"
+        f"زمان: {message.received_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"----------------------------------------\n"
+        f"**متن پیام:**\n"
+        f"{message.body}"
+    )    
     try:
         if channel.type == DestinationChannel.ChannelType.TELEGRAM:
             token = cfg.get("token")
@@ -28,7 +35,6 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
                 raise ValueError("Telegram token or chat_id is missing in config.")
                 
             result = send_telegram_message(token, chat_id, text)
-            print("hello")
             provider_id = result.get("message_id")
 
         elif channel.type == DestinationChannel.ChannelType.WEBHOOK:

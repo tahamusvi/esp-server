@@ -20,6 +20,7 @@ from drf_spectacular.utils import extend_schema
 from .services import process_incoming_message
 from .serializers import DestinationChannelCreateSerializer
 from django.shortcuts import get_object_or_404
+from .serializers import RuleDestinationCreateSerializer
 
 #--------------------------------------------------------------------
 class IncomingSmsAPIView(APIView):
@@ -292,4 +293,30 @@ class DisableDestinationChannelView(APIView):
             {"message": "کانال مقصد با موفقیت غیرفعال شد"},
             status=status.HTTP_200_OK
         )
+
+class AddManagementDestinationChannelView(APIView):
+
+    @extend_schema(
+        request=RuleDestinationCreateSerializer,
+        responses={201: RuleDestinationCreateSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = RuleDestinationCreateSerializer(data=request.data)
+
+        if serializer.is_valid():
+            destination = serializer.save()
+            return Response(
+                {
+                    "message": "Destination channel successfully assigned to rule",
+                    "data": {
+                        "id": destination.id,
+                        "rule": destination.rule.id,
+                        "channel": destination.channel.id,
+                        "is_enabled": destination.is_enabled,
+                    },
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)     
         

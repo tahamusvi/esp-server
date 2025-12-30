@@ -14,4 +14,5 @@ urlpatterns = [
     path('add-destination-Channel/', AddDestinationChannelView.as_view(), name='add-destination-Channel'),
     path('get-destination-Channel-list/', GetDestinationChannelListView.as_view(), name='get-destination-Channel-list'),
     path('delete-destination-Channel/<uuid:pk>/', DisableDestinationChannelView.as_view(), name='delete-destination-Channel'),
+    path('add-management-destination-Channel/', AddManagementDestinationChannelView.as_view(), name='add-management-destination-Channel'),
 ]

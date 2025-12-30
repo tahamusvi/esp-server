@@ -144,6 +144,7 @@ class DestinationChannelAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
 @admin.register(ForwardRule)
 class ForwardRuleAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "project",
         "is_enabled",
@@ -278,12 +279,6 @@ class RuleDestinationAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
                 "rule",
                 "channel",
                 "is_enabled",
-            ),
-        }),
-        ("Templates & config", {
-            "fields": (
-                "override_text_template",
-                "action_config",
             ),
         }),
         ("Timestamps", {

@@ -117,7 +117,6 @@ class ForwardRule(TimeStampedModel):
         return f"{self.project.slug}:Rule:{self.name}"
 
 class RuleDestination(TimeStampedModel):
-    # Action to perform when a rule matches
     rule = models.ForeignKey(
         ForwardRule,
         on_delete=models.CASCADE,
@@ -130,13 +129,6 @@ class RuleDestination(TimeStampedModel):
     )
 
     is_enabled = models.BooleanField(default=True)
-
-    # Optional template override for this rule-channel pair
-    override_text_template = models.TextField(blank=True)
-
-    # Optional per-action config
-    action_config = models.JSONField(default=dict, blank=True)
-    # e.g. {"prefix": "[BANK]", "mute_telegram_preview": true}
 
     class Meta:
         unique_together = ("rule", "channel")

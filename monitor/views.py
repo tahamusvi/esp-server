@@ -208,3 +208,14 @@ class AddForwardRuleView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class GetForwardRuleListView(APIView):
+
+    @extend_schema(
+        responses={200: ForwardRuleSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        queryset = ForwardRule.objects.all().select_related("project")
+        serializer = ForwardRuleSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        

@@ -9,5 +9,6 @@ urlpatterns = [
     path('dashboard/sms-traffic/', SmsTrafficAPIView.as_view(), name='sms-traffic-24h'),
     path('deliveries/', DeliveryAttemptListAPIView.as_view(), name='delivery-list'),
     path('add-forward-rule/', AddForwardRuleView.as_view(), name='add-forward-rule'),
+    path('delete-forward-rule/<uuid:pk>/', DeleteForwardRuleView.as_view(), name='delete-forward-rule'),
     path('get-forward-rule-list/', GetForwardRuleListView.as_view(), name='get-forward-rule-list'),
 ]

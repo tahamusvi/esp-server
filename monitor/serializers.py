@@ -123,4 +123,4 @@ class ForwardRuleSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = ForwardRule
-        fields = ['name', 'filters', 'project', 'is_enabled']
+        fields = ['id', 'name', 'filters', 'project', 'is_enabled']

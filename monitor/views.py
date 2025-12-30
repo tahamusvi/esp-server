@@ -18,6 +18,7 @@ from rest_framework import generics
 from .serializers import ForwardRuleSerializer
 from drf_spectacular.utils import extend_schema
 from .services import process_incoming_message
+from django.shortcuts import get_object_or_404
 
 #--------------------------------------------------------------------
 class IncomingSmsAPIView(APIView):
@@ -218,4 +219,14 @@ class GetForwardRuleListView(APIView):
         queryset = ForwardRule.objects.all().select_related("project")
         serializer = ForwardRuleSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class DeleteForwardRuleView(APIView):
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            rule = ForwardRule.objects.get(pk=pk)
+            rule.is_enabled = False
+            rule.save()
+            return Response({"message": "Rule disabled successfully"}, status=200)
+        except ForwardRule.DoesNotExist:
+            return Response({"error": "Rule not found"}, status=404)
         

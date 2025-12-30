@@ -97,20 +97,17 @@ class DestinationChannel(TimeStampedModel):
 
 class ForwardRule(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="forward_rules")
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="forward_rules",
+        null=True,
+        blank=True
+    )
+    # project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="forward_rules")
 
     name = models.CharField(max_length=128)
     is_enabled = models.BooleanField(default=True)
-    priority = models.IntegerField(default=100)  # lower = higher priority
-
-    source_endpoint = models.ForeignKey(
-        SimEndpoint,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="rules",
-    )
-    # null means: rule applies to all endpoints of this project
 
     filters = models.JSONField(default=dict, blank=True)
 

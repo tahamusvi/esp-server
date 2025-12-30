@@ -144,16 +144,14 @@ class ForwardRuleAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
         "name",
         "project",
-        "source_endpoint",
-        "priority",
         "is_enabled",
         "stop_processing",
         "created_at",
     )
     list_filter = ("project", "is_enabled", "stop_processing")
     search_fields = ("name", "filters")
-    list_select_related = ("project", "source_endpoint")
-    ordering = ("project", "priority", "name")
+    list_select_related = ("project",)
+    ordering = ("project", "name")
     inlines = (RuleDestinationInline,)
 
     fieldsets = (
@@ -162,12 +160,11 @@ class ForwardRuleAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
                 "project",
                 "name",
                 "is_enabled",
-                "priority",
                 "stop_processing",
             ),
         }),
         ("Scope & filters", {
-            "fields": ("source_endpoint", "filters"),
+            "fields": ("filters",),
             "description": "JSON filters to match incoming messages. Empty means match-all.",
         }),
         ("Timestamps", {

@@ -15,7 +15,8 @@ from django.db.models import Count
 from rest_framework.permissions import IsAuthenticated
 from datetime import timedelta
 from rest_framework import generics
-
+from .serializers import ForwardRuleSerializer
+from drf_spectacular.utils import extend_schema
 from .services import process_incoming_message
 
 #--------------------------------------------------------------------
@@ -187,3 +188,23 @@ class DeliveryAttemptListAPIView(generics.ListAPIView):
         ).select_related('channel', 'rule', 'message')
 
         return queryset
+    
+class AddForwardRuleView(APIView):
+    @extend_schema(
+        request=ForwardRuleSerializer,
+        responses={201: ForwardRuleSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = ForwardRuleSerializer(data=request.data)
+
+        if serializer.is_valid():
+            rule = serializer.save()
+            return Response(
+                {
+                    "message": "قانون جدید با موفقیت ذخیره شد",
+                    "data": ForwardRuleSerializer(rule).data
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

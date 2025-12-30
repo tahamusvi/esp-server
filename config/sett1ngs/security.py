@@ -12,6 +12,7 @@ if DEBUG:
 else:
     CORS_ALLOWED_ORIGINS = [
         "https://dashboard.ferzz.ir",
+        "http://localhost:3000"
     ]
     ALLOWED_HOSTS = [
         "dashboard.ferzz.ir",

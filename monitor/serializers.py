@@ -114,3 +114,13 @@ class DeliveryAttemptSerializer(serializers.ModelSerializer):
     def get_message_content(self, obj):
         body = obj.message.body
         return body[:50] + '...' if len(body) > 50 else body
+
+class ForwardRuleSerializer(serializers.ModelSerializer):
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    class Meta:
+        model = ForwardRule
+        fields = ['name', 'filters', 'project', 'is_enabled']

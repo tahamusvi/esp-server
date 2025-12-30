@@ -33,6 +33,7 @@ class RuleDestinationInline(admin.TabularInline):
 @admin.register(Project)
 class ProjectAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "user",
         "slug",

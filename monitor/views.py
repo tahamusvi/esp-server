@@ -18,6 +18,7 @@ from rest_framework import generics
 from .serializers import ForwardRuleSerializer
 from drf_spectacular.utils import extend_schema
 from .services import process_incoming_message
+from .serializers import DestinationChannelCreateSerializer
 from django.shortcuts import get_object_or_404
 
 #--------------------------------------------------------------------
@@ -229,4 +230,31 @@ class DeleteForwardRuleView(APIView):
             return Response({"message": "Rule disabled successfully"}, status=200)
         except ForwardRule.DoesNotExist:
             return Response({"error": "Rule not found"}, status=404)
+        
+class AddDestinationChannelView(APIView):
+
+    @extend_schema(
+        request=DestinationChannelCreateSerializer,
+        responses={201: DestinationChannelCreateSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = DestinationChannelCreateSerializer(data=request.data)
+
+        if serializer.is_valid():
+            project = get_object_or_404(
+                Project,
+                id="e86f4970-689d-498c-acf6-e3dc78abde73"
+            )
+
+            channel = serializer.save(project=project)
+
+            return Response(
+                {
+                    "message": "کانال مقصد با موفقیت ایجاد شد",
+                    "data": DestinationChannelCreateSerializer(channel).data
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         

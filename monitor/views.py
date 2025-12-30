@@ -257,4 +257,20 @@ class AddDestinationChannelView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GetDestinationChannelListView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        project = get_object_or_404(
+            Project,
+            id="e86f4970-689d-498c-acf6-e3dc78abde73"
+        )
+
+        channels = DestinationChannel.objects.filter(
+            project=project
+        ).order_by("-created_at")
+
+        serializer = DestinationChannelCreateSerializer(channels, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)    
         

@@ -128,9 +128,10 @@ class ForwardRuleSerializer(serializers.ModelSerializer):
 class DestinationChannelCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DestinationChannel
-        fields = ['type', 'name', 'config', 'project', 'is_enabled']
+        fields = ['id','type', 'name', 'config', 'project', 'is_enabled']
 
         extra_kwargs = {
+            'id': {'read_only': True},
             'type': {'required': True},
             'name': {'required': True},
             'config': {'required': True},

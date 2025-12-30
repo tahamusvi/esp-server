@@ -13,4 +13,5 @@ urlpatterns = [
     path('get-forward-rule-list/', GetForwardRuleListView.as_view(), name='get-forward-rule-list'),
     path('add-destination-Channel/', AddDestinationChannelView.as_view(), name='add-destination-Channel'),
     path('get-destination-Channel-list/', GetDestinationChannelListView.as_view(), name='get-destination-Channel-list'),
+    path('delete-destination-Channel/<uuid:pk>/', DisableDestinationChannelView.as_view(), name='delete-destination-Channel'),
 ]

@@ -107,6 +107,7 @@ class SimEndpointAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
 @admin.register(DestinationChannel)
 class DestinationChannelAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "type",
         "project",

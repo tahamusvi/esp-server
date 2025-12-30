@@ -272,5 +272,24 @@ class GetDestinationChannelListView(APIView):
 
         serializer = DestinationChannelCreateSerializer(channels, many=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)    
+        return Response(serializer.data, status=status.HTTP_200_OK)  
+    
+class DisableDestinationChannelView(APIView):
+
+    def delete(self, request, pk, *args, **kwargs):
+        channel = get_object_or_404(DestinationChannel, pk=pk)
+
+        if not channel.is_enabled:
+            return Response(
+                {"message": "کانال از قبل غیرفعال شده است"},
+                status=status.HTTP_200_OK
+            )
+
+        channel.is_enabled = False
+        channel.save(update_fields=["is_enabled"])
+
+        return Response(
+            {"message": "کانال مقصد با موفقیت غیرفعال شد"},
+            status=status.HTTP_200_OK
+        )
         

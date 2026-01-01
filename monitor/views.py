@@ -294,7 +294,7 @@ class DisableDestinationChannelView(APIView):
             status=status.HTTP_200_OK
         )
 
-class AddManagementDestinationChannelView(APIView):
+class ManagementDestinationChannelView(APIView):
 
     @extend_schema(
         request=RuleDestinationCreateSerializer,
@@ -318,5 +318,20 @@ class AddManagementDestinationChannelView(APIView):
                 status=status.HTTP_201_CREATED
             )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)     
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+    
+    def delete(self, request, destination_id, *args, **kwargs):
+        destination = get_object_or_404(
+            RuleDestination,
+            id=destination_id,
+            is_enabled=True
+        )
+
+        destination.is_enabled = False
+        destination.save(update_fields=["is_enabled"])
+
+        return Response(
+            {"message": "Destination channel disabled successfully"},
+            status=status.HTTP_204_NO_CONTENT
+        )  
         

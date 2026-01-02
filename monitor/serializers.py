@@ -19,12 +19,12 @@ class IncomingMessageSerializer(serializers.ModelSerializer):
         model = IncomingMessage
         fields = [
             "id",
-            "endpoint",
             "from_number",
             "to_number",
             "body",
             "received_at",
             "created_at",
+            "processed",
         ]
         read_only_fields = fields
 

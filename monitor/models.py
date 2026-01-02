@@ -12,52 +12,9 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class Project(TimeStampedModel):
-    class Environment(models.TextChoices):
-        PROD = "prod", "Production"
-        STAGE = "stage", "Staging"
-        DEV = "dev", "Development"
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=128)
-    slug = models.SlugField(max_length=140, unique=True)
-    environment = models.CharField(max_length=16, choices=Environment.choices, default=Environment.PROD)
-    description = models.TextField(blank=True)
-    timezone = models.CharField(max_length=64, default="Europe/Amsterdam")
-    is_active = models.BooleanField(default=True)
-    
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='projects',
-        verbose_name='Owner'
-    )
-
-    def __str__(self):
-        return f"{self.name} ({self.environment})"
-
-
-class SimEndpoint(TimeStampedModel):
-    # Each Sim or Esp32
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="sim_endpoints")
-
-    name = models.CharField(max_length=128)
-    phone_number = models.CharField(max_length=32)  # +98912...
-    imei = models.CharField(max_length=64, blank=True) # international Mobile Equipment identity
-    api_token = models.CharField(max_length=128, unique=True)
-
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.project.slug}:{self.phone_number}"
-
-
 
 class IncomingMessage(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="incoming_messages")
-    endpoint = models.ForeignKey(SimEndpoint, on_delete=models.CASCADE, related_name="messages")
 
     # Sms Info
     from_number = models.CharField(max_length=32)
@@ -70,7 +27,7 @@ class IncomingMessage(TimeStampedModel):
     processed = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.project.slug}:{self.to_number} <- {self.from_number}"
+        return f"{self.to_number} <- {self.from_number}"
 
 
 class DestinationChannel(TimeStampedModel):
@@ -82,7 +39,6 @@ class DestinationChannel(TimeStampedModel):
         Bale = "bale", "Bale"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="destination_channels")
 
     type = models.CharField(max_length=32, choices=ChannelType.choices)
     name = models.CharField(max_length=128)
@@ -97,14 +53,6 @@ class DestinationChannel(TimeStampedModel):
 
 class ForwardRule(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name="forward_rules",
-        null=True,
-        blank=True
-    )
-    # project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="forward_rules")
 
     name = models.CharField(max_length=128)
     is_enabled = models.BooleanField(default=True)

@@ -2,14 +2,11 @@
 from django.utils import timezone
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
 from .models import *
 from .serializers import *
-
 from django.db.models.functions import TruncHour
 from django.db.models import Count
 from rest_framework.permissions import IsAuthenticated
@@ -21,61 +18,6 @@ from .services import process_incoming_message
 from .serializers import DestinationChannelCreateSerializer
 from django.shortcuts import get_object_or_404
 from .serializers import RuleDestinationCreateSerializer
-
-#--------------------------------------------------------------------
-class IncomingSmsAPIView(APIView):
-    """
-    Public endpoint for devices (ESP32/SIM800) to push incoming SMS.
-    """
-
-    authentication_classes = []  
-    permission_classes = []      
-    serializer_class = IncomingSmsPayloadSerializer
-
-    @transaction.atomic
-    def post(self, request, *args, **kwargs):
-
-        serializer = self.serializer_class(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        validated = serializer.validated_data
-        token = validated["token"]
-
-        try:
-            endpoint = SimEndpoint.objects.get(api_token=token, is_active=True)
-        except SimEndpoint.DoesNotExist:
-            return Response(
-                {"detail": "Invalid or missing API token."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        msg = IncomingMessage.objects.create(
-            project=endpoint.project,
-            endpoint=endpoint,
-            from_number=validated["from_number"],
-            to_number=validated["to_number"],
-            body=validated["body"],
-            received_at=validated.get("received_at") or timezone.now(),
-            raw_payload=request.data,
-        )
-
-        try:
-            deliveries_created = process_incoming_message(msg)
-            
-            status_message = f"Message saved. {deliveries_created} delivery attempts initiated."
-            
-        except Exception as e:
-            status_message = f"Message saved, but processing failed: {e}"
-
-        out = IncomingMessageSerializer(msg)
-        return Response(
-            {
-                "message": out.data,
-                "status": status_message,
-            },
-            status=status.HTTP_201_CREATED,
-        )
 #--------------------------------------------------------------------
 class IncomingMessageListAPIView(generics.ListAPIView):
     """
@@ -85,42 +27,11 @@ class IncomingMessageListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
-        user_projects = self.request.user.projects.filter(is_active=True)
-        project_ids = user_projects.values_list('id', flat=True)
-
-        if not project_ids:
-            return IncomingMessage.objects.none()
-
         """
         Filters the queryset to only include messages related to the authenticated user's project IDs.
         """
-        return IncomingMessage.objects.filter(
-            project_id__in=project_ids
-        ).order_by('-received_at')
+        return IncomingMessage.objects.all().order_by('-received_at')
 
-#--------------------------------------------------------------------
-class SimEndpointListCreateAPIView(generics.ListCreateAPIView):
-    """
-    Handles GET (List Endpoints) and POST (Create New Endpoint).
-    Restricted to the user's projects.
-    """
-    serializer_class = SimEndpointSerializer
-    permission_classes = [IsAuthenticated] 
-
-    def get_queryset(self):
-        """
-        Filters Endpoints based on the authenticated user's projects.
-        """
-        user_projects = self.request.user.projects.all()
-        project_ids = user_projects.values_list('id', flat=True)
-        
-        return SimEndpoint.objects.filter(
-            project_id__in=project_ids
-        ).order_by('name')
-
-    def perform_create(self, serializer):
-        serializer.save()
-        
 #--------------------------------------------------------------------
 class SmsTrafficAPIView(APIView):
     """
@@ -130,19 +41,11 @@ class SmsTrafficAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        
-        user_projects = request.user.projects.all()
-        project_ids = user_projects.values_list('id', flat=True)
-
-        if not project_ids:
-            return Response({"detail": "No active project found for this user."}, status=status.HTTP_404_NOT_FOUND)
-
         end_time = timezone.now()
         start_time = end_time - timedelta(hours=24)
         
         traffic_data = (
             IncomingMessage.objects.filter(
-                project_id__in=project_ids,
                 received_at__range=(start_time, end_time)
             )
             .annotate(hour=TruncHour('received_at'))
@@ -180,18 +83,10 @@ class DeliveryAttemptListAPIView(generics.ListAPIView):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        user_projects = self.request.user.projects.all()
-        project_ids = user_projects.values_list('id', flat=True)
-
-        if not project_ids:
-            return DeliveryAttempt.objects.none()
-
-        queryset = DeliveryAttempt.objects.filter(
-            message__project_id__in=project_ids
-        ).select_related('channel', 'rule', 'message')
+        queryset = DeliveryAttempt.objects.all().select_related('channel', 'rule', 'message')
 
         return queryset
-    
+#--------------------------------------------------------------------
 class AddForwardRuleView(APIView):
     @extend_schema(
         request=ForwardRuleSerializer,
@@ -211,7 +106,7 @@ class AddForwardRuleView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+#--------------------------------------------------------------------
 class GetForwardRuleListView(APIView):
 
     @extend_schema(
@@ -221,7 +116,7 @@ class GetForwardRuleListView(APIView):
         queryset = ForwardRule.objects.all().select_related("project")
         serializer = ForwardRuleSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+#--------------------------------------------------------------------    
 class DeleteForwardRuleView(APIView):
     def delete(self, request, pk, *args, **kwargs):
         try:
@@ -231,7 +126,7 @@ class DeleteForwardRuleView(APIView):
             return Response({"message": "Rule disabled successfully"}, status=200)
         except ForwardRule.DoesNotExist:
             return Response({"error": "Rule not found"}, status=404)
-        
+#--------------------------------------------------------------------  
 class AddDestinationChannelView(APIView):
 
     @extend_schema(
@@ -242,12 +137,7 @@ class AddDestinationChannelView(APIView):
         serializer = DestinationChannelCreateSerializer(data=request.data)
 
         if serializer.is_valid():
-            project = get_object_or_404(
-                Project,
-                id="e86f4970-689d-498c-acf6-e3dc78abde73"
-            )
-
-            channel = serializer.save(project=project)
+            channel = serializer.save()
 
             return Response(
                 {
@@ -258,23 +148,17 @@ class AddDestinationChannelView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+#--------------------------------------------------------------------
 class GetDestinationChannelListView(APIView):
 
     def get(self, request, *args, **kwargs):
-        project = get_object_or_404(
-            Project,
-            id="e86f4970-689d-498c-acf6-e3dc78abde73"
-        )
 
-        channels = DestinationChannel.objects.filter(
-            project=project
-        ).order_by("-created_at")
+        channels = DestinationChannel.objects.all().order_by("-created_at")
 
         serializer = DestinationChannelCreateSerializer(channels, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)  
-    
+#--------------------------------------------------------------------    
 class DisableDestinationChannelView(APIView):
 
     def delete(self, request, pk, *args, **kwargs):
@@ -293,7 +177,7 @@ class DisableDestinationChannelView(APIView):
             {"message": "کانال مقصد با موفقیت غیرفعال شد"},
             status=status.HTTP_200_OK
         )
-
+#--------------------------------------------------------------------
 class ManagementDestinationChannelView(APIView):
 
     @extend_schema(
@@ -334,4 +218,5 @@ class ManagementDestinationChannelView(APIView):
             {"message": "Destination channel disabled successfully"},
             status=status.HTTP_204_NO_CONTENT
         )  
-        
+#--------------------------------------------------------------------
+       

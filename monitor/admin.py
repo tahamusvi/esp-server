@@ -1,8 +1,6 @@
 from django.contrib import admin
 
 from .models import (
-    Project,
-    SimEndpoint,
     IncomingMessage,
     DestinationChannel,
     ForwardRule,
@@ -27,79 +25,6 @@ class RuleDestinationInline(admin.TabularInline):
     autocomplete_fields = ("channel",)
 
 
-# ======================
-# Project admin
-# ======================
-@admin.register(Project)
-class ProjectAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "user",
-        "slug",
-        "environment",
-        "timezone",
-        "is_active",
-        "created_at",
-    )
-    list_filter = ("environment", "is_active")
-    search_fields = ("name", "slug")
-    ordering = ("name",)
-
-    fieldsets = (
-        ("Basic info", {
-            "fields": (
-                "name",
-                "slug",
-                "environment",
-                "description",
-                "timezone",
-                "is_active",
-            ),
-        }),
-        ("Timestamps", {
-            "fields": ("created_at", "updated_at"),
-        }),
-    )
-
-
-# ======================
-# SimEndpoint admin
-# ======================
-@admin.register(SimEndpoint)
-class SimEndpointAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
-    list_display = (
-        "name",
-        "phone_number",
-        "project",
-        "is_active",
-        "api_token",
-        "created_at",
-    )
-    list_filter = ("project", "is_active")
-    search_fields = ("name", "phone_number", "imei", "api_token")
-    list_select_related = ("project",)
-    ordering = ("project", "name")
-
-    fieldsets = (
-        ("Basic info", {
-            "fields": (
-                "project",
-                "name",
-                "phone_number",
-                "imei",
-                "is_active",
-            ),
-        }),
-        ("Auth", {
-            "fields": ("api_token",),
-            "description": "API token used by the device (ESP32/SIM800) to authenticate.",
-        }),
-        ("Timestamps", {
-            "fields": ("created_at", "updated_at"),
-        }),
-    )
-
 
 # ======================
 # DestinationChannel admin
@@ -110,19 +35,16 @@ class DestinationChannelAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
         "id",
         "name",
         "type",
-        "project",
         "is_enabled",
         "created_at",
     )
-    list_filter = ("type", "project", "is_enabled")
+    list_filter = ("type", "is_enabled")
     search_fields = ("name",)
-    list_select_related = ("project",)
-    ordering = ("project", "type", "name")
+    ordering = ( "type", "name")
 
     fieldsets = (
         ("Basic info", {
             "fields": (
-                "project",
                 "name",
                 "type",
                 "is_enabled",
@@ -146,21 +68,18 @@ class ForwardRuleAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
         "id",
         "name",
-        "project",
         "is_enabled",
         "stop_processing",
         "created_at",
     )
-    list_filter = ("project", "is_enabled", "stop_processing")
+    list_filter = ( "is_enabled", "stop_processing")
     search_fields = ("name", "filters")
-    list_select_related = ("project",)
-    ordering = ("project", "name")
+    ordering = ("name",)
     inlines = (RuleDestinationInline,)
 
     fieldsets = (
         ("Basic info", {
             "fields": (
-                "project",
                 "name",
                 "is_enabled",
                 "stop_processing",
@@ -184,15 +103,12 @@ class IncomingMessageAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     list_display = (
         "from_number",
         "to_number",
-        "project",
-        "endpoint",
         "processed",
         "received_at",
         "created_at",
     )
-    list_filter = ("project", "endpoint", "processed")
+    list_filter = ("processed",)
     search_fields = ("from_number", "to_number", "body")
-    list_select_related = ("project", "endpoint")
     date_hierarchy = "received_at"
     ordering = ("-received_at",)
 
@@ -201,8 +117,6 @@ class IncomingMessageAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
     fieldsets = (
         ("Message", {
             "fields": (
-                "project",
-                "endpoint",
                 "from_number",
                 "to_number",
                 "body",
@@ -233,7 +147,7 @@ class DeliveryAttemptAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
         "last_attempt_at",
         "created_at",
     )
-    list_filter = ("status", "channel__type", "channel__project")
+    list_filter = ("status", "channel__type",)
     search_fields = ("message__body", "error", "provider_message_id")
     list_select_related = ("message", "channel", "rule")
     ordering = ("-created_at",)
@@ -268,7 +182,7 @@ class RuleDestinationAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
         "is_enabled",
         "created_at",
     )
-    list_filter = ("is_enabled", "channel__type", "rule__project")
+    list_filter = ("is_enabled", "channel__type")
     search_fields = ("rule__name", "channel__name")
     list_select_related = ("rule", "channel")
     ordering = ("rule", "channel")

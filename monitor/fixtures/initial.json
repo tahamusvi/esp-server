@@ -1,0 +1,67 @@
+[
+  {
+    "model": "monitor.incomingmessage",
+    "pk": "550e8400-e29b-41d4-a716-446655440000",
+    "fields": {
+      "created_at": "2024-01-20T10:00:00Z",
+      "updated_at": "2024-01-20T10:00:00Z",
+      "from_number": "+989121111111",
+      "to_number": "+989303016386",
+      "body": "سلام، این یک پیام تست برای سیستم است.",
+      "received_at": "2024-01-20T09:55:00Z",
+      "raw_payload": {"raw_body": "0633064406270645", "source": "MQTT"},
+      "processed": true
+    }
+  },
+  {
+    "model": "monitor.destinationchannel",
+    "pk": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+    "fields": {
+      "created_at": "2024-01-20T08:00:00Z",
+      "updated_at": "2024-01-20T08:00:00Z",
+      "type": "telegram",
+      "name": "کانال تلگرام ادمین",
+      "is_enabled": true,
+      "config": {"bot_token": "123456:ABC", "chat_id": "98765432"}
+    }
+  },
+  {
+    "model": "monitor.forwardrule",
+    "pk": "a3333333-b333-c333-d333-e33333333333",
+    "fields": {
+      "created_at": "2024-01-20T08:05:00Z",
+      "updated_at": "2024-01-20T08:05:00Z",
+      "name": "فوروارد همه پیام‌ها به تلگرام",
+      "is_enabled": true,
+      "filters": {"all": true},
+      "stop_processing": false
+    }
+  },
+  {
+    "model": "monitor.ruledestination",
+    "pk": 1,
+    "fields": {
+      "created_at": "2024-01-20T08:10:00Z",
+      "updated_at": "2024-01-20T08:10:00Z",
+      "rule": "a3333333-b333-c333-d333-e33333333333",
+      "channel": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+      "is_enabled": true
+    }
+  },
+  {
+    "model": "monitor.deliveryattempt",
+    "pk": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "fields": {
+      "created_at": "2024-01-20T10:05:00Z",
+      "updated_at": "2024-01-20T10:05:00Z",
+      "message": "550e8400-e29b-41d4-a716-446655440000",
+      "rule": "a3333333-b333-c333-d333-e33333333333",
+      "channel": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+      "status": "sent",
+      "provider_message_id": "TG_998877",
+      "error": "",
+      "last_attempt_at": "2024-01-20T10:05:00Z",
+      "retry_count": 0
+    }
+  }
+]

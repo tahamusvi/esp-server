@@ -6,6 +6,7 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import DatabaseError, close_old_connections
 from ...models import IncomingMessage,FailedLog
+from ...services import process_incoming_message
 from config.settings import MQTT_BROKER_HOST
 from django.utils import timezone
 
@@ -58,12 +59,22 @@ class Command(BaseCommand):
                 except:
                     pass
 
-            IncomingMessage.objects.create(
+            msg = IncomingMessage.objects.create(
                 from_number=sender,
                 to_number="MC60_GATEWAY",
                 body=decoded_content,
                 received_at=timezone.now(),
+                raw_payload=raw_body,
             )
+
+            try:
+                deliveries_created = process_incoming_message(msg)
+                status_message = f"Message saved. {deliveries_created} delivery attempts initiated."
+
+            except Exception as e:
+                status_message = f"Message saved, but processing failed: {e}"
+
+            print(status_message)
 
             print(f"Saved SMS from {sender}!")
 

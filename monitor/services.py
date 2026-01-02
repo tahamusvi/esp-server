@@ -7,7 +7,9 @@ from django.db import transaction
 from monitor.models import IncomingMessage, ForwardRule, DeliveryAttempt, DestinationChannel
 from django.core.exceptions import ValidationError
 from .behaviors import send_bale_message,send_telegram_message
-
+from paho.mqtt import publish
+import paho.mqtt.client as mqtt
+from config.settings import MQTT_BROKER_HOST
 
 
 def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage):
@@ -17,14 +19,17 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
     """
     channel = attempt.channel
     cfg = channel.config or {}
+
+    local_time = timezone.localtime(message.received_at)
+    time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
+
     
     text = (
-        f"----------------------------------\n"
-        f"📞 از شماره: {message.from_number}\n"
-        f"📱 به شماره: {message.to_number}\n"
-        f"🕒 تاریخ و زمان: {message.received_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"از شماره: {message.from_number}\n"
+        f"به شماره: {message.to_number}\n"
+         f"تاریخ و زمان: {time_str}\n"
         f"==================================\n"
-        f"📝 متن پیام:\n"
+        f"متن پیام:\n"
         f"{message.body}"
     )
     try:
@@ -45,6 +50,24 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
                 
             result = send_bale_message(token, chat_id, text)
             provider_id = result.get("message_id")
+
+        if channel.type == DestinationChannel.ChannelType.SMS:
+            target_phone = cfg.get("phone") 
+            if not target_phone:
+                raise ValueError("Target phone number is missing in SMS channel config.")
+
+            mqtt_payload = f"SEND_SMS:{target_phone}:{message.body}"
+            command_topic = f"device/MC60/commands" 
+            
+            publish.single(
+                command_topic,
+                payload=mqtt_payload,
+                hostname=MQTT_BROKER_HOST,
+                port=1883,
+                qos=1
+            )
+            
+            provider_id = f"MQTT_SENT_{timezone.now().timestamp()}"
 
         elif channel.type == DestinationChannel.ChannelType.WEBHOOK:
             url = cfg.get("url")
@@ -104,11 +127,10 @@ def process_incoming_message(message: IncomingMessage) -> int:
 
     rules_qs = ForwardRule.objects.filter(
         is_enabled=True
-    ).order_by('priority')
+    )
 
-    rules_to_check = rules_qs.filter(source_endpoint__in=[message.endpoint, None])
 
-    for rule in rules_to_check:
+    for rule in rules_qs:
         if not _check_message_filters(message, rule.filters):
             continue
 

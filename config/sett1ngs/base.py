@@ -21,6 +21,8 @@ REDIS_LINK = env("REDIS_LINK")
 RABBIT_URI = env("RABBIT_URI")
 PROXY = env("PROXY")
 
+MQTT_BROKER_HOST = env("MQTT_BROKER_HOST")
+
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")

@@ -5,8 +5,9 @@ import paho.mqtt.client as mqtt
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import DatabaseError, close_old_connections
-from ...models import Log, FailedLog
-from services.tokens import ServiceAccessToken
+from ...models import IncomingMessage,FailedLog
+from config.settings import MQTT_BROKER_HOST
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +15,12 @@ class Command(BaseCommand):
     help = "MQTT Consumer for MC60 Gateway SMS Integration"
 
     TOPIC = "device/MC60/sms_rx"
-    BROKER_HOST = "YOUR_PUBLIC_IP"
+    BROKER_HOST = MQTT_BROKER_HOST
     BROKER_PORT = 1883
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS(f"[*] Starting MQTT Consumer for MC60 Gateway"))
 
-        # تعریف کلاینت MQTT
         client = mqtt.Client(client_id="Django_Gateway_Worker", clean_session=False)
         client.on_connect = self.on_connect
         client.on_message = self.on_message
@@ -36,10 +36,10 @@ class Command(BaseCommand):
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            self.stdout.write(self.style.SUCCESS("✅ Connected to MQTT Broker"))
+            self.stdout.write(self.style.SUCCESS("Connected to MQTT Broker!!"))
             client.subscribe(self.TOPIC, qos=1)
         else:
-            print(f"❌ Connection failed with code {rc}")
+            print(f"[Error] Connection failed with code {rc}")
 
     def on_message(self, client, userdata, msg):
         close_old_connections()
@@ -58,33 +58,21 @@ class Command(BaseCommand):
                 except:
                     pass
 
-            # پیدا کردن توکن (مشابه کد قبلی‌تان)
-            # نکته: اینجا باید مشخص کنید که توکن MC60 چیست. 
-            # می‌توانید یک توکن ثابت در دیتابیس برای این دستگاه بسازید.
-            try:
-                token = ServiceAccessToken.objects.get(name="MC60_GATEWAY")
-            except ServiceAccessToken.DoesNotExist:
-                print("Error: MC60 Token not found in database")
-                return
-
-            # ذخیره در جدول Log (دقیقاً با فیلدهای کد خودتان)
-            Log.objects.create(
-                user=token.user,
-                token=token,
-                created_at=datetime.now(),
-                source=sender,
-                destination="GATEWAY", # مقصد خود ماژول است
-                status="s",
-                is_mock=False,
-                payload={"raw": content, "text": decoded_content}
+            IncomingMessage.objects.create(
+                from_number=sender,
+                to_number="MC60_GATEWAY",
+                body=decoded_content,
+                received_at=timezone.now(),
             )
 
-            print(f"💾 Saved SMS from {sender}: {decoded_content[:20]}...")
+            print(f"Saved SMS from {sender}!")
 
         except DatabaseError as db_e:
             print(f"Database Error: {db_e}")
-            # در MQTT مفهوم Requeue مثل RabbitMQ متفاوت است، 
-            # اما با QoS 1 اگر ACK ندهیم، دوباره تلاش می‌شود.
         except Exception as e:
-            print(f"Unexpected Error: {e}")
-            FailedLog.objects.create(raw_data=raw_body, error_message=str(e))
+            print(f"Error processing message: {e}")
+            FailedLog.objects.create(
+                raw_data=msg.payload.decode("utf-8"),
+                error_message=str(e),
+                source_tag="mc60_mqtt"
+            )

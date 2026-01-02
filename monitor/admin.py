@@ -6,6 +6,7 @@ from .models import (
     ForwardRule,
     RuleDestination,
     DeliveryAttempt,
+    FailedLog,
 )
 
 
@@ -199,3 +200,23 @@ class RuleDestinationAdmin(TimeStampedReadonlyMixin, admin.ModelAdmin):
             "fields": ("created_at", "updated_at"),
         }),
     )
+
+
+# ======================
+# FailedLog inline
+# ======================
+
+@admin.register(FailedLog)
+class FailedLogAdmin(admin.ModelAdmin):
+    list_display = ('id', 'short_error', 'source_tag', 'created_at')
+    
+    list_filter = ('source_tag', 'created_at')
+    search_fields = ('error_message', 'raw_data')
+    ordering = ('-created_at',)
+    readonly_fields = ('id', 'raw_data', 'error_message', 'source_tag', 'created_at', 'updated_at')
+
+    def short_error(self, obj):
+        if obj.error_message:
+            return obj.error_message[:50] + "..." if len(obj.error_message) > 50 else obj.error_message
+        return "No error message"
+    short_error.short_description = 'Error Summary'

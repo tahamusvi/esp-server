@@ -30,6 +30,20 @@ class IncomingMessage(TimeStampedModel):
         return f"{self.to_number} <- {self.from_number}"
 
 
+class FailedLog(TimeStampedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    raw_data = models.TextField(help_text="The original un-processed payload")
+    error_message = models.TextField(blank=True, null=True)    
+    source_tag = models.CharField(max_length=64, blank=True, default="mqtt_gateway")
+
+    class Meta:
+        verbose_name = "Failed Log"
+        verbose_name_plural = "Failed Logs"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Error at {self.created_at} - {self.error_message[:30]}..."
+
 class DestinationChannel(TimeStampedModel):
     class ChannelType(models.TextChoices):
         SMS = "sms", "SMS"
@@ -48,7 +62,7 @@ class DestinationChannel(TimeStampedModel):
 
 
     def __str__(self):
-        return f"{self.project.slug}:{self.type}:{self.name}"
+        return f"{self.type}:{self.name}"
 
 
 class ForwardRule(TimeStampedModel):
@@ -62,7 +76,7 @@ class ForwardRule(TimeStampedModel):
     stop_processing = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.project.slug}:Rule:{self.name}"
+        return f"Rule:{self.name}"
 
 class RuleDestination(TimeStampedModel):
     rule = models.ForeignKey(

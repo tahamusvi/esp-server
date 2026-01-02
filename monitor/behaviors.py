@@ -50,7 +50,6 @@ def send_telegram_message(token: str, chat_id: int | str, text: str,
     r = requests.post(url, json=payload,proxies=proxies, timeout=10)
     r.raise_for_status()
     data = r.json()
-    print(data)
     if not data.get("ok"):
         raise RuntimeError(f"Telegram error: {data}")
     return data["result"]

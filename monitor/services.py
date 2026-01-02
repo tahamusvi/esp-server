@@ -42,7 +42,7 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
             result = send_telegram_message(token, chat_id, text)
             provider_id = result.get("message_id")
 
-        if channel.type == DestinationChannel.ChannelType.Bale:
+        elif channel.type == DestinationChannel.ChannelType.Bale:
             token = cfg.get("token")
             chat_id = cfg.get("chat_id")
             if not token or not chat_id:
@@ -51,7 +51,7 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
             result = send_bale_message(token, chat_id, text)
             provider_id = result.get("message_id")
 
-        if channel.type == DestinationChannel.ChannelType.SMS:
+        elif channel.type == DestinationChannel.ChannelType.SMS:
             target_phone = cfg.get("phone") 
             if not target_phone:
                 raise ValueError("Target phone number is missing in SMS channel config.")

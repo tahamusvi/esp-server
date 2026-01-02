@@ -21,14 +21,14 @@ from .serializers import RuleDestinationCreateSerializer
 #--------------------------------------------------------------------
 class IncomingMessageListAPIView(generics.ListAPIView):
     """
-    Returns a list of all incoming messages related to the authenticated user's projects.
+    Returns a list of all incoming messages related to the authenticated user.
     """
     serializer_class = IncomingMessageSerializer
     permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
         """
-        Filters the queryset to only include messages related to the authenticated user's project IDs.
+        Filters the queryset to only include messages related to the authenticated user IDs.
         """
         return IncomingMessage.objects.all().order_by('-received_at')
 
@@ -36,7 +36,7 @@ class IncomingMessageListAPIView(generics.ListAPIView):
 class SmsTrafficAPIView(APIView):
     """
     Calculates and returns the SMS traffic (incoming messages) 
-    count for the last 24 hours, grouped by hour, only for the authenticated user's projects.
+    count for the last 24 hours, grouped by hour, only for the authenticated user.
     """
     permission_classes = [IsAuthenticated]
 
@@ -75,7 +75,7 @@ class SmsTrafficAPIView(APIView):
 class DeliveryAttemptListAPIView(generics.ListAPIView):
     """
     API endpoint to list delivery attempts (Simple Version).
-    Only includes attempts related to the authenticated user's projects.
+    Only includes attempts related to the authenticated user.
     """
     serializer_class = DeliveryAttemptSerializer
     permission_classes = [IsAuthenticated]
@@ -113,7 +113,7 @@ class GetForwardRuleListView(APIView):
         responses={200: ForwardRuleSerializer(many=True)}
     )
     def get(self, request, *args, **kwargs):
-        queryset = ForwardRule.objects.all().select_related("project")
+        queryset = ForwardRule.objects.all()
         serializer = ForwardRuleSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 #--------------------------------------------------------------------    

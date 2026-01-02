@@ -19,7 +19,6 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
     cfg = channel.config or {}
     
     text = (
-        f"🔔 پیامک جدید (پروژه: {message.project.name}):\n"
         f"----------------------------------\n"
         f"📞 از شماره: {message.from_number}\n"
         f"📱 به شماره: {message.to_number}\n"
@@ -56,7 +55,6 @@ def _execute_delivery_attempt(attempt: DeliveryAttempt, message: IncomingMessage
                 "from": message.from_number,
                 "to": message.to_number,
                 "body": message.body,
-                "project_slug": message.project.slug,
             }
             r = requests.post(url, json=payload, timeout=8)
             r.raise_for_status()
@@ -103,10 +101,8 @@ def process_incoming_message(message: IncomingMessage) -> int:
     The core service logic: finds matching rules and creates delivery attempts.
     """
     deliveries_created = 0
-    project = message.project
 
     rules_qs = ForwardRule.objects.filter(
-        project=project,
         is_enabled=True
     ).order_by('priority')
 

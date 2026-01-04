@@ -64,7 +64,7 @@ class ForwardRuleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'filters', 'is_enabled', 'destination_channels']
 
     def get_destination_channels(self, obj):
-        actions = obj.actions.all()
+        actions = obj.actions.filter(is_enabled=True)
         return [
             {
                 "id": action.channel.id,

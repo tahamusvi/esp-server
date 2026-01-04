@@ -128,3 +128,7 @@ class RuleDestinationCreateSerializer(serializers.ModelSerializer):
             channel=validated_data["channel"],
             is_enabled=True,
         )              
+
+class RuleDestinationDeleteSerializer(serializers.Serializer):
+    rule_id = serializers.UUIDField()
+    channel_id = serializers.UUIDField()        

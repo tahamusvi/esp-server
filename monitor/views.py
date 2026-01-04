@@ -204,10 +204,21 @@ class ManagementDestinationChannelView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
     
-class DeleteManagementDestinationChannelView(APIView):            
-    def delete(self, request, pk, *args, **kwargs):
+class DeleteManagementDestinationChannelView(APIView):
+
+    @extend_schema(
+        responses={200: None}
+    )
+    def delete(self, request, *args, **kwargs):
+
+        rule_id = kwargs.get("rule_id")
+        channel_id = kwargs.get("channel_id")
+
         try:
-            destination = RuleDestination.objects.get(pk=pk)
+            destination = RuleDestination.objects.get(
+                rule_id=rule_id,
+                channel_id=channel_id
+            )
 
             if not destination.is_enabled:
                 return Response(

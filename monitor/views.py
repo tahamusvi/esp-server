@@ -204,19 +204,29 @@ class ManagementDestinationChannelView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
     
-    def delete(self, request, destination_id, *args, **kwargs):
-        destination = get_object_or_404(
-            RuleDestination,
-            id=destination_id,
-            is_enabled=True
-        )
+class DeleteManagementDestinationChannelView(APIView):            
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            destination = RuleDestination.objects.get(pk=pk)
 
-        destination.is_enabled = False
-        destination.save(update_fields=["is_enabled"])
+            if not destination.is_enabled:
+                return Response(
+                    {"message": "Destination channel already disabled"},
+                    status=status.HTTP_200_OK
+                )
 
-        return Response(
-            {"message": "Destination channel disabled successfully"},
-            status=status.HTTP_204_NO_CONTENT
-        )  
+            destination.is_enabled = False
+            destination.save(update_fields=["is_enabled"])
+
+            return Response(
+                {"message": "Destination channel disabled successfully"},
+                status=status.HTTP_200_OK
+            )
+
+        except RuleDestination.DoesNotExist:
+            return Response(
+                {"error": "Destination channel not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 #--------------------------------------------------------------------
        

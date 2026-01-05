@@ -110,24 +110,29 @@ class RuleDestinationCreateSerializer(serializers.ModelSerializer):
         except DestinationChannel.DoesNotExist:
             raise serializers.ValidationError({"channel_id": "Channel not found"})
 
-        if RuleDestination.objects.filter(rule=rule, channel=channel).exists():
-            raise serializers.ValidationError(
-                "This channel is already assigned to this rule"
-            )
+        existing_obj = RuleDestination.objects.filter(rule=rule, channel=channel).first()
+        
+        if existing_obj and existing_obj.is_enabled:
+            raise serializers.ValidationError("This channel is already active for this rule")
 
         attrs["rule"] = rule
         attrs["channel"] = channel
+        attrs["instance"] = existing_obj 
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop("rule_id")
-        validated_data.pop("channel_id")
-
+        instance = validated_data.get("instance")
+        
+        if instance:
+            instance.is_enabled = True
+            instance.save()
+            return instance
+        
         return RuleDestination.objects.create(
             rule=validated_data["rule"],
             channel=validated_data["channel"],
             is_enabled=True,
-        )              
+        )
 
 class RuleDestinationDeleteSerializer(serializers.Serializer):
     rule_id = serializers.UUIDField()
